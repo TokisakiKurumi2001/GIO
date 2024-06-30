@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, AutoModelforCausalLM 
+from transformers import AutoTokenizer, AutoModelForCausalLM 
 import json, os
 import torch
 from loguru import logger
@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     logger.info('Loading model ...')
     tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
-    model = AutoModelforCausalLM.from_pretrained(MODEL_PATH)
+    model = AutoModelForCausalLM.from_pretrained(MODEL_PATH)
     model.load_adapter(PEFT_PATH)
     device = torch.device('cuda:0')
     model = model.to(device)
