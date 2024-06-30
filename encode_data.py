@@ -17,7 +17,7 @@ def encode(data, tokenizer, model, batch_size: int=16) -> List:
     for i in tqdm(range(0, num_sample, batch_size), desc='Encoding', unit='batch'):
         batch = data[i:i+batch_size]
         texts = [el['prompt'] for el in batch]
-        inputs = tokenizer(texts, return_tensors='pt')
+        inputs = tokenizer(texts, return_tensors='pt', padding=True)
         inputs = {k: v.to(device) for k, v in inputs.items()}
 
         outputs = model(**inputs).logits
