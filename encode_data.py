@@ -21,7 +21,7 @@ def encode(data, tokenizer, model, batch_size: int=16) -> List:
 
         outputs = model(**inputs).logits
         sent_len = torch.sum(inputs['attention_mask'], dim=1)
-        pred = torch.select_index(outputs, sent_len, dim=1)
+        pred = torch.index_select(input=outputs, dim=1, indicies=sent_len)
         preds.append(pred.clone().cpu())
 
         del inputs
