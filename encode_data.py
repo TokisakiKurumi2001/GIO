@@ -16,12 +16,15 @@ def encode(data, tokenizer, model, batch_size: int=16) -> List:
     preds = []
     for i in tqdm(range(0, num_sample, batch_size), desc='Encoding', unit='batch'):
         batch = data[i:i+batch_size]
-        inputs = tokenizer(batch, return_tensors='pt')
+        texts = [el['prompt'] for el in batch]
+        inputs = tokenizer(texts, return_tensors='pt')
         inputs = {k: v.to(device) for k, v in inputs.items()}
 
         outputs = model(**inputs).logits
         sent_len = torch.sum(inputs['attention_mask'], dim=1)
+        logger.debug(sent_len)
         pred = torch.index_select(input=outputs, dim=1, indicies=sent_len)
+        logger.debug(pred.shape)
         preds.append(pred.clone().cpu())
 
         del inputs
