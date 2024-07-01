@@ -22,7 +22,7 @@ def encode(data, tokenizer, model, batch_size: int=4) -> List:
         inputs = {k: v.to(device) for k, v in inputs.items()}
 
         with torch.inference_mode():
-            outputs = model(**inputs).last_hidden_state
+            outputs = model(**inputs).hidden_states[-1]
         sent_len = torch.sum(inputs['attention_mask'], dim=1)
         batch_indicies = torch.arange(batch_size)
         pred = outputs[batch_indicies, sent_len].squeeze()
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     logger.info('Loading model ...')
     tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
     tokenizer.pad_token_id = tokenizer.eos_token_id
-    model = AutoModelForCausalLM.from_pretrained(MODEL_PATH)
+    model = AutoModelForCausalLM.from_pretrained(MODEL_PATH, output_hidden_states=True)
     model.load_adapter(PEFT_PATH)
     device = torch.device('cuda:0')
     model = model.to(device)
