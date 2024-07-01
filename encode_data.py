@@ -21,7 +21,8 @@ def encode(data, tokenizer, model, batch_size: int=4) -> List:
         inputs = tokenizer(texts, return_tensors='pt', padding=True, max_length=MAX_LENGTH, truncation=True)
         inputs = {k: v.to(device) for k, v in inputs.items()}
 
-        outputs = model(**inputs).logits
+        with torch.inference_mode():
+            outputs = model(**inputs).logits
         sent_len = torch.sum(inputs['attention_mask'], dim=1)
         logger.debug(sent_len)
         batch_indicies = torch.arange(batch_size)
