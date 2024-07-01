@@ -23,10 +23,13 @@ def encode(data, tokenizer, model, batch_size: int=4) -> List:
 
         with torch.inference_mode():
             outputs = model(**inputs).hidden_states[-1]
-        sent_len = torch.sum(inputs['attention_mask'], dim=1).tolist()
-        for i, idx in enumerate(sent_len):
-            output = outputs[i, idx, :].detach().clone().cpu()
-            preds.append(output)
+        sent_len = torch.sum(inputs['attention_mask'], dim=1) - 1
+        batch_indices = torch.arange(batch_size)
+        pred = outputs[batch_indices, sent_len]
+        preds.append(pred.detach().clone().cpu())
+        # for i, idx in enumerate(sent_len):
+        #     output = outputs[i, idx, :].detach().clone().cpu()
+        #     preds.append(output)
 
         del inputs
         del outputs
