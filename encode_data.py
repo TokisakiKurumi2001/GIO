@@ -7,7 +7,7 @@ from typing import List
 
 DATA_PATH='data/syn.jsonl'
 SAVE_PATH='data/syn.pt'
-MODEL_PATH='meta-llama/Llama-2-7b-hf'
+MODEL_PATH='llama_2'
 PEFT_PATH='teacher_sft'
 MAX_LENGTH=1024
 
