@@ -4,8 +4,34 @@ import os
 import numpy as np
 import jax.numpy as jnp
 from loguru import logger
+from sklearn.cluster import KMeans
 
 DATA_PATH='data/'
+
+def quantize(np_array):
+    model = KMeans(n_clusters=1500, random_state=42, max_iter=20)
+    outputs = model.fit(np_array) # clustering
+    centroid_array = outputs.cluster_centers_
+    vec2cluster_id = outputs.labels_
+    return centroid_array, vec2cluster_id
+
+def explode(centroid_array, selected_centroid_array, vec2cluster_id):
+    cluster_ids = []
+
+    # Iterate through each sample in Tensor A
+    for sample in selected_centroid_array:
+        # Find matching indices in Tensor B
+        match_indices = np.where((centroid_array == sample).all(axis=1))[0]
+        
+        # Add found indices to cluster_ids
+        cluster_ids.extend(match_indices.tolist())
+
+    indicies = []
+    for idx, cluster_id in enumerate(vec2cluster_id):
+        if cluster_id in cluster_ids:
+            indicies.append(idx)
+
+    return indicies
 
 if __name__ == "__main__":
     logger.info('Loading encoded data ...')
@@ -22,13 +48,11 @@ if __name__ == "__main__":
         gio_kl = GIOKL.GIOKL(uniform_low=-1, uniform_high=1, uniform_start_size=20, dim=4096)
 
         logger.info('Quantize data ...')
-        syn_emb_df = gio_kl.spark.createDataFrame(data[(i, syn_emb[i, :].squeeze()) for i in range(syn_emb.shape[0])] , schema=['id', 'features'])
-        syn_emb_df = gio_kl.spark.createDataFrame(data[(i, target_emb[i, :].squeeze()) for i in range(target_emb.shape[0])] , schema=['id', 'features'])
-        model_train, model_X, transformed_train, transformed_X = gio_kl.quantize(syn_emb_df, target_emb_df)
+        syn_centroid, syn_mappings = quantize(syn_emb.numpy())
+        target_centroid, _ = quantize(target_emb.numpy())
 
-        X = jnp.array(model_X.clusterCenters())
-        train = jnp.array(model_train.clusterCenters())
-        centroids_df = gio_kl.spark.createDataFrame(data=[(i, each.tolist()) for i, each in enumerate(model_train.clusterCenters())], schema=["id", "centroid"])
+        X = jnp.array(target_centroid)
+        train = jnp.array(syn_centroid)
         logger.success(f'Successfully quantized data.')
 
         logger.info('Select data ...')
@@ -37,4 +61,6 @@ if __name__ == "__main__":
         logger.success('Successfully selected data.')
 
         logger.info('Explode data ...')
-        full_selections_df = gio_kl.explode(W, transformed_train, centroids_df)
+        W_np = np.array(W, copy=False)
+        indices = explode(syn_centroid, W_np, syn_mappings)
+        torch.save(torch.tensor(indices), DATA_PATH + 'select.pt')
