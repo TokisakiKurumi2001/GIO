@@ -48,6 +48,8 @@ if __name__ == "__main__":
         gio_kl = GIOKL.GIOKL(uniform_low=-1, uniform_high=1, uniform_start_size=20, dim=4096)
 
         logger.info('Quantize data ...')
+        syn_emb = syn_emb.view(-1, 4096)
+        target_emb = target_emb.view(-1, 4096)
         syn_centroid, syn_mappings = quantize(syn_emb.numpy())
         target_centroid, _ = quantize(target_emb.numpy())
 
