@@ -4,7 +4,7 @@ import torch
 DATA_PATH='data/'
 
 if __name__ == "__main__":
-    indicies = torch.load(DATA_PATH + 'select.pt').numpy()
+    indicies = torch.load(DATA_PATH + 'select.pt').tolist()
     
     data = []
     with open(DATA_PATH + 'syn.jsonl') as fin:
