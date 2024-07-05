@@ -8,8 +8,8 @@ from sklearn.cluster import KMeans
 
 DATA_PATH='data/'
 
-def quantize(np_array):
-    model = KMeans(n_clusters=1500, random_state=42, max_iter=20)
+def quantize(np_array, num_centroid=1500):
+    model = MiniBatchKMeans(n_clusters=num_centroid, random_state=42, max_iter=20, verbose=1, n_init='auto')
     outputs = model.fit(np_array) # clustering
     centroid_array = outputs.cluster_centers_
     vec2cluster_id = outputs.labels_
@@ -22,7 +22,7 @@ def explode(centroid_array, selected_centroid_array, vec2cluster_id):
     for sample in selected_centroid_array:
         # Find matching indices in Tensor B
         match_indices = np.where((centroid_array == sample).all(axis=1))[0]
-        
+
         # Add found indices to cluster_ids
         cluster_ids.extend(match_indices.tolist())
 
@@ -50,15 +50,15 @@ if __name__ == "__main__":
         logger.info('Quantize data ...')
         syn_emb = syn_emb.view(-1, 4096)
         target_emb = target_emb.view(-1, 4096)
-        syn_centroid, syn_mappings = quantize(syn_emb.numpy())
-        target_centroid, _ = quantize(target_emb.numpy())
+        syn_centroid, syn_mappings = quantize(syn_emb.numpy(), 5000)
+        target_centroid, _ = quantize(target_emb.numpy(), 500)
 
         X = jnp.array(target_centroid)
         train = jnp.array(syn_centroid)
         logger.success(f'Successfully quantized data.')
 
         logger.info('Select data ...')
-        W, kl_divs, _ = gio_kl.fit(train, X, max_iter=300, stopping_criterion='sequential_increase_tolerance', v_init='jump')
+        W, kl_divs, _ = gio_kl.fit(train, X, max_iter=300, stop_criterion='increase', v_init='jump')
         W = W[20:] # Remove the uniform start
         logger.success('Successfully selected data.')
 
